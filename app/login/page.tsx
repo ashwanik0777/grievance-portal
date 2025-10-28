@@ -44,25 +44,7 @@ export default function LoginPage() {
 
           <LoginForm userType={loginType} />
 
-          {loginType === "user" && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-center text-gray-600 text-sm mb-4">Demo credentials:</p>
-              <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-700 space-y-1">
-                <p>Email: user@example.com</p>
-                <p>Password: password123</p>
-              </div>
-            </div>
-          )}
-
-          {loginType === "admin" && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-center text-gray-600 text-sm mb-4">Demo admin credentials:</p>
-              <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-700 space-y-1">
-                <p>Email: admin@example.com</p>
-                <p>Password: admin123</p>
-              </div>
-            </div>
-          )}
+          
         </div>
 
         {/* Footer Links */}
