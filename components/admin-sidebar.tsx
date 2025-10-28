@@ -3,6 +3,16 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
+import {
+  PieChart,
+  FileText,
+  Users,
+  Tag,
+  Settings,
+  BarChart,
+  LogOut,
+  Menu as MenuIcon,
+} from "lucide-react"
 
 export default function AdminSidebar() {
   const pathname = usePathname()
@@ -15,12 +25,12 @@ export default function AdminSidebar() {
   }
 
   const menuItems = [
-    { href: "/admin/dashboard", label: "Dashboard", icon: "📊" },
-    { href: "/admin/reports", label: "Manage Reports", icon: "📋" },
-    { href: "/admin/users", label: "Users", icon: "👥" },
-    { href: "/admin/categories", label: "Categories", icon: "🏷️" },
-    { href: "/admin/settings", label: "Settings", icon: "⚙️" },
-    { href: "/admin/analytics", label: "Analytics", icon: "📈" },
+    { href: "/admin/dashboard", label: "Dashboard", icon: <PieChart className="w-5 h-5" /> },
+    { href: "/admin/reports", label: "Manage Reports", icon: <FileText className="w-5 h-5" /> },
+    { href: "/admin/users", label: "Users", icon: <Users className="w-5 h-5" /> },
+    { href: "/admin/categories", label: "Categories", icon: <Tag className="w-5 h-5" /> },
+    { href: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
+    { href: "/admin/analytics", label: "Analytics", icon: <BarChart className="w-5 h-5" /> },
   ]
 
   return (
@@ -29,8 +39,9 @@ export default function AdminSidebar() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="md:hidden fixed top-4 left-4 z-50 bg-emerald-600 text-white p-2 rounded-lg hover:bg-emerald-700 transition-colors"
+        aria-label="Toggle admin menu"
       >
-        ☰
+        <MenuIcon size={18} />
       </button>
 
       {/* Sidebar */}
@@ -65,8 +76,9 @@ export default function AdminSidebar() {
         <div className="border-t border-slate-700 pt-4">
           <button
             onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
           >
+            <LogOut size={16} />
             Logout
           </button>
         </div>
