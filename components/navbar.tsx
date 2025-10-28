@@ -7,7 +7,7 @@ import { Menu, X, Leaf, LogOut, Settings, User } from "lucide-react"
 
 interface AppUser {
   _id: string
-  name: string
+  name?: string
   email: string
   role: string
   points: number
@@ -58,11 +58,14 @@ export default function Navbar() {
     { href: "/games", label: "Games" },
   ]
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
+  const getInitials = (name?: string, email?: string) => {
+    const source = (name && name.trim()) || (email && email.split("@")[0]) || ""
+    if (!source) return "U"
+    return source
+      .split(/\s+/)
       .map((n) => n[0])
       .join("")
+      .slice(0, 2)
       .toUpperCase()
   }
 
@@ -99,16 +102,16 @@ export default function Navbar() {
                     <button
                       onClick={() => setShowProfileMenu(!showProfileMenu)}
                       className="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold transition-all duration-200 hover:shadow-lg active:scale-95"
-                      title={user.name}
+                      title={user.name ?? user.email}
                     >
-                      {getInitials(user.name)}
+                      {getInitials(user.name, user.email)}
                     </button>
 
                     {/* Profile Dropdown Menu */}
                     {showProfileMenu && (
                       <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-lg shadow-lg py-2 w-48 z-50 animate-slide-up">
                         <div className="px-4 py-2 border-b border-slate-200">
-                          <p className="font-semibold text-slate-900">{user.name}</p>
+                          <p className="font-semibold text-slate-900">{user.name ?? user.email}</p>
                           <p className="text-xs text-slate-600">{user.email}</p>
                           <p className="text-sm font-bold text-emerald-600 mt-1">{user.points} points</p>
                         </div>

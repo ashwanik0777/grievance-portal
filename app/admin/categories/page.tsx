@@ -44,7 +44,16 @@ export default function AdminCategories() {
           return
         }
 
-        setCategories(defaultCategories as any)
+        // ensure each category has a unique _id so React keys are stable
+        setCategories(
+          defaultCategories.map((c, i) => ({
+            _id: `default-${i}-${Date.now()}`,
+            name: c.name,
+            description: c.description,
+            icon: c.icon,
+            reportsCount: (c as any).reportsCount ?? 0,
+          }))
+        )
       } catch (err) {
         setError("Failed to load categories")
       } finally {

@@ -50,10 +50,24 @@ export async function findUserByEmail(email: string): Promise<User | null> {
   return usersCollection.findOne({ email })
 }
 
-export async function findUserById(id: string): Promise<User | null> {
-  const db = await getDatabase()
-  const usersCollection = db.collection("users")
-  return usersCollection.findOne({ _id: new ObjectId(id) })
+export async function findUserById(id?: string | null) {
+  // guard: missing id
+  if (!id) return null
+
+  // validate id before constructing ObjectId to avoid BSONError
+  if (!ObjectId.isValid(id)) {
+    console.warn(`findUserById: invalid id provided: ${id}`)
+    return null
+  }
+
+  try {
+    const db = await getDatabase()
+    const usersCollection = db.collection("users")
+    return usersCollection.findOne({ _id: new ObjectId(id) })
+  } catch (err) {
+    console.error("findUserById error:", err)
+    return null
+  }
 }
 
 export async function authenticateUser(email: string, password: string): Promise<User | null> {

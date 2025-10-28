@@ -1,4 +1,3 @@
-import { authenticateUser } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
@@ -9,30 +8,48 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
-    const user = await authenticateUser(email, password)
+    const adminEmail = process.env.ADMIN_EMAIL
+    const adminPassword = process.env.ADMIN_PASSWORD
 
-    if (!user) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+    if (!adminEmail || !adminPassword) {
+      return NextResponse.json({ error: "Admin credentials not configured" }, { status: 500 })
     }
 
-    if (user.role !== "admin") {
-      return NextResponse.json({ error: "Admin access only" }, { status: 403 })
+    if (email !== adminEmail || password !== adminPassword) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     }
 
     const isProd = process.env.NODE_ENV === "production"
     const sameSite: "none" | "lax" = isProd ? "none" : "lax"
-    const cookieOptions = {
-      name: "session",
-      value: user._id?.toString() || "",
+    const maxAge = 60 * 60 * 24 * 7 // 7 days
+
+    const res = NextResponse.json({ ok: true })
+
+    // Set HttpOnly cookies for admin session
+    res.cookies.set("session", "admin-session", {
       httpOnly: true,
       path: "/",
       secure: isProd,
       sameSite,
-      maxAge: 60 * 60 * 24 * 7,
-    }
+      maxAge,
+    })
 
-    const res = NextResponse.json({ ok: true })
-    res.cookies.set(cookieOptions)
+    res.cookies.set("userRole", "admin", {
+      httpOnly: true,
+      path: "/",
+      secure: isProd,
+      sameSite,
+      maxAge,
+    })
+
+    // minimal userId for admin; change if you want an actual id
+    res.cookies.set("userId", "admin", {
+      httpOnly: true,
+      path: "/",
+      secure: isProd,
+      sameSite,
+      maxAge,
+    })
 
     return res
   } catch (error: any) {
