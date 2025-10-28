@@ -1,10 +1,9 @@
-import { type NextRequest, NextResponse } from "next/server"
 import { authenticateUser } from "@/lib/auth"
-import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { email, password } = await request.json()
+    const { email, password } = await req.json()
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
@@ -20,33 +19,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Admin access only" }, { status: 403 })
     }
 
-    const cookieStore = await cookies()
-    const maxAge = 60 * 60 * 24 // 24 hours
-
-    cookieStore.set("userId", user._id?.toString() || "", {
+    const isProd = process.env.NODE_ENV === "production"
+    const sameSite: "none" | "lax" = isProd ? "none" : "lax"
+    const cookieOptions = {
+      name: "session",
+      value: user._id?.toString() || "",
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: maxAge,
-    })
+      path: "/",
+      secure: isProd,
+      sameSite,
+      maxAge: 60 * 60 * 24 * 7,
+    }
 
-    cookieStore.set("userRole", user.role, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: maxAge,
-    })
+    const res = NextResponse.json({ ok: true })
+    res.cookies.set(cookieOptions)
 
-    cookieStore.set("loginTime", new Date().toISOString(), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: maxAge,
-    })
-
-    const { password: _, ...userWithoutPassword } = user
-
-    return NextResponse.json({ message: "Admin login successful", user: userWithoutPassword }, { status: 200 })
+    return res
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Login failed" }, { status: 500 })
   }

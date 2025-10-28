@@ -28,6 +28,8 @@ export default function LoginForm({ userType }: LoginFormProps) {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // include cookies (HttpOnly session cookie) so subsequent /api/auth/me requests are authenticated
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       })
 
@@ -35,6 +37,15 @@ export default function LoginForm({ userType }: LoginFormProps) {
 
       if (!response.ok) {
         setError(data.error || "Login failed")
+        setLoading(false)
+        return
+      }
+
+      // Verify server-side session is set (prevent GET /api/auth/me 401)
+      const meResp = await fetch("/api/auth/me", { credentials: "include" })
+      if (!meResp.ok) {
+        const meData = await meResp.json().catch(() => ({}))
+        setError(meData.error || "Authentication verification failed after login")
         setLoading(false)
         return
       }
