@@ -174,7 +174,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <a
                     href="/admin/reports"
-                    className="bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 p-6 rounded-lg border border-blue-200 transition-all text-center"
+                    className="bg-gradient from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 p-6 rounded-lg border border-blue-200 transition-all text-center"
                   >
                     <p className="text-3xl mb-2">📋</p>
                     <p className="font-semibold text-gray-900">Manage Reports</p>
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
 
                   <a
                     href="/admin/users"
-                    className="bg-gradient-to-br from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 p-6 rounded-lg border border-emerald-200 transition-all text-center"
+                    className="bg-gradient from-emerald-50 to-emerald-100 hover:from-emerald-100 hover:to-emerald-200 p-6 rounded-lg border border-emerald-200 transition-all text-center"
                   >
                     <p className="text-3xl mb-2">👥</p>
                     <p className="font-semibold text-gray-900">Manage Users</p>
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
 
                   <a
                     href="/admin/categories"
-                    className="bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 p-6 rounded-lg border border-purple-200 transition-all text-center"
+                    className="bg-gradient from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 p-6 rounded-lg border border-purple-200 transition-all text-center"
                   >
                     <p className="text-3xl mb-2">🏷️</p>
                     <p className="font-semibold text-gray-900">Categories</p>
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
 
                   <a
                     href="/admin/settings"
-                    className="bg-gradient-to-br from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 p-6 rounded-lg border border-orange-200 transition-all text-center"
+                    className="bg-gradient from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 p-6 rounded-lg border border-orange-200 transition-all text-center"
                   >
                     <p className="text-3xl mb-2">⚙️</p>
                     <p className="font-semibold text-gray-900">Settings</p>

@@ -4,7 +4,6 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Upload, Send, AlertCircle, CheckCircle, Loader, Navigation } from "lucide-react"
-import { uploadToCloudinary } from "@/lib/cloudinary"
 
 const categories = ["Pothole", "Streetlight", "Garbage", "Road Damage", "Water Issue", "Other"]
 
@@ -22,6 +21,7 @@ export default function ReportForm() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [gettingLocation, setGettingLocation] = useState(false)
 
@@ -68,47 +68,58 @@ export default function ReportForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError("")
 
-    try {
-      let imageUrl = ""
+    // basic validation before starting async work
+    if (!formData.title?.trim() || !formData.description?.trim()) {
+      setError("Please provide title and description")
+      return
+    }
 
-      if (formData.image) {
-        setUploading(true)
-        imageUrl = await uploadToCloudinary(formData.image)
-        setUploading(false)
+    setSubmitting(true)
+    try {
+      // upload attachments (if any) and wait for all to finish
+      const uploadedImages = formData.image
+        ? await Promise.all(
+            [formData.image].map(async (file: File) => {
+              const result = await uploadToCloudinary(file)
+              return result?.secure_url ?? result?.url ?? result?.secureUrl ?? ""
+            }),
+          )
+        : []
+
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        images: uploadedImages,
+        // include other fields your backend expects (location, tags, etc.)
       }
 
-      const response = await fetch("/api/reports/create", {
+      const res = await fetch("/api/user/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-          location: formData.location,
-          image: imageUrl,
-        }),
+        credentials: "include",
+        body: JSON.stringify(payload),
       })
 
-      if (!response.ok) {
-        const data = await response.json()
-        setError(data.error || "Failed to submit report")
-        setLoading(false)
-        return
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to submit report")
       }
 
-      setSubmitted(true)
-      setTimeout(() => {
-        setFormData({ title: "", description: "", category: "Pothole", location: "", image: null })
-        setPreview(null)
-        setSubmitted(false)
-        router.refresh()
-      }, 2000)
+      // success: reset form and navigate or show success UI
+      setFormData({ title: "", description: "", category: "Pothole", location: "", image: null })
+      setPreview(null)
+      setSubmitted(false)
+      router.push("/report")
     } catch (err: any) {
-      setError(err.message || "Failed to submit report")
-      setLoading(false)
+      console.error("report submit error:", err)
+      setError(err?.message ?? "Submission failed")
+    } finally {
+      // always clear submitting so UI doesn't stay stuck
+      setSubmitting(false)
     }
   }
 
@@ -249,4 +260,44 @@ export default function ReportForm() {
       </button>
     </form>
   )
+}
+
+async function uploadToCloudinary(file: File) {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  if (!cloudName) throw new Error("Cloudinary cloud name is not configured (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME)")
+
+  // If user configured an unsigned preset, use it (convenience)
+  const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+  if (preset) {
+    const fd = new FormData()
+    fd.append("file", file)
+    fd.append("upload_preset", preset)
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: "POST",
+      body: fd,
+    })
+    if (!res.ok) throw new Error("Cloudinary upload failed")
+    return res.json()
+  }
+
+  // Signed upload flow: request signature from our server
+  const sigRes = await fetch("/api/cloudinary/sign")
+  if (!sigRes.ok) {
+    const err = await sigRes.json().catch(() => ({ error: "sign endpoint failed" }))
+    throw new Error(err?.error || "Failed to get Cloudinary signature")
+  }
+  const { timestamp, signature, apiKey } = await sigRes.json()
+
+  const fd = new FormData()
+  fd.append("file", file)
+  fd.append("timestamp", String(timestamp))
+  fd.append("api_key", apiKey)
+  fd.append("signature", signature)
+
+  const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: fd,
+  })
+  if (!uploadRes.ok) throw new Error("Cloudinary signed upload failed")
+  return uploadRes.json()
 }
