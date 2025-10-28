@@ -82,7 +82,7 @@ export default function ReportForm() {
       const uploadedImages = formData.image
         ? await Promise.all(
             [formData.image].map(async (file: File) => {
-              const result = await uploadToCloudinary(file)
+              const result = await uploadFileViaServer(file)
               return result?.secure_url ?? result?.url ?? result?.secureUrl ?? ""
             }),
           )
@@ -262,42 +262,24 @@ export default function ReportForm() {
   )
 }
 
-async function uploadToCloudinary(file: File) {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-  if (!cloudName) throw new Error("Cloudinary cloud name is not configured (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME)")
-
-  // If user configured an unsigned preset, use it (convenience)
-  const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-  if (preset) {
-    const fd = new FormData()
-    fd.append("file", file)
-    fd.append("upload_preset", preset)
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-      method: "POST",
-      body: fd,
-    })
-    if (!res.ok) throw new Error("Cloudinary upload failed")
-    return res.json()
-  }
-
-  // Signed upload flow: request signature from our server
-  const sigRes = await fetch("/api/cloudinary/sign")
-  if (!sigRes.ok) {
-    const err = await sigRes.json().catch(() => ({ error: "sign endpoint failed" }))
-    throw new Error(err?.error || "Failed to get Cloudinary signature")
-  }
-  const { timestamp, signature, apiKey } = await sigRes.json()
-
-  const fd = new FormData()
-  fd.append("file", file)
-  fd.append("timestamp", String(timestamp))
-  fd.append("api_key", apiKey)
-  fd.append("signature", signature)
-
-  const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: fd,
+async function uploadFileViaServer(file: File) {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(String(r.result))
+    r.onerror = reject
+    r.readAsDataURL(file)
   })
-  if (!uploadRes.ok) throw new Error("Cloudinary signed upload failed")
-  return uploadRes.json()
+
+  const res = await fetch("/api/cloudinary/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageData: dataUrl }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "upload failed" }))
+    throw new Error(err.error || "Upload failed")
+  }
+  const json = await res.json()
+  return json.result // cloudinary response
 }
